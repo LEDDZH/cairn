@@ -1,0 +1,56 @@
+{
+  "name": "Cairn · 把大任务拆成下一小块",
+  "short_name": "Cairn",
+  "description": "面向 ADHD 与神经多样性人群的规划工具：把压垮人的大任务拆成可以在两分钟内开始的一小步。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#F6F5F2",
+  "theme_color": "#F6F5F2",
+  "categories": ["productivity", "lifestyle", "health"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "拆解一件事",
+      "short_name": "拆解",
+      "description": "把一件大任务拆成可以立刻开始的小步骤",
+      "url": "./index.html?view=breakdown"
+    },
+    {
+      "name": "看进度",
+      "short_name": "进度",
+      "description": "你堆了多少石头，这周立住了没有",
+      "url": "./index.html?view=progress"
+    },
+    {
+      "name": "专注一段",
+      "short_name": "专注",
+      "description": "开始一段低刺激的专注计时",
+      "url": "./index.html?view=focus"
+    }
+  ]
+}
