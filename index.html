@@ -548,7 +548,7 @@ h2 { font-weight: 650; }
 .chip-clay { background: var(--clay-soft); color: var(--clay); }
 .chip-slate { background: var(--slate-soft); color: var(--slate); }
 .chip-amber { background: var(--amber-soft); color: var(--amber); }
-.chip-line { border-color: var(--line); background: transparent; }
+.chip-line { border-color: var(--sand); background: var(--sand-soft); }
 
 /* 卡片 */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
@@ -617,12 +617,18 @@ h2 { font-weight: 650; }
   font-variant-numeric: tabular-nums; letter-spacing: .02em;
 }
 .tl-track { position: relative; flex: 1 1 auto; min-width: 0; border-top: 1px solid var(--line); }
+/* 时间线上的时间块。
+ *
+ * v2.3b：默认色从苔绿改成海蓝（--sea）。
+ * 理由是语义分工：苔绿代表"完成/进度"，而时间块代表"安排/时间"，
+ * 两者不该用同一个颜色。海蓝来自参考图里的海面，也是"海滩卵石色板"
+ * 第一个真正落到界面上的颜色。 */
 .tl-block {
   position: absolute; left: 0; right: 0;
   border-radius: 8px; padding: 6px 10px;
   font-size: 12.5px; overflow: hidden;
-  border-left: 3px solid var(--accent);
-  background: var(--accent-soft); color: var(--ink);
+  border-left: 3px solid var(--sea);
+  background: var(--sea-soft); color: var(--ink);
   display: flex; align-items: center; gap: 8px;
   transition: filter var(--dur) var(--ease);
 }
@@ -651,21 +657,56 @@ h2 { font-weight: 650; }
 
 /* 石堆（进度可视化：每完成一小块就堆一块石头）
  *
- * v2.3：圆角从 999px 的正椭圆改成不对称比例。
- * 为什么用百分比而不是固定值：它按元素自身宽高计算，所以同一条规则
- * 在 62px 宽的底石和 32px 宽的顶石上都能给出协调的弧度。
- * 四个角的水平/垂直半径两两不同，才不会退化成一个椭圆。 */
-.cairn-stack { display: flex; flex-direction: column-reverse; align-items: center; gap: 3px; }
+ * v2.3：两个变化。
+ *   ① 圆角从 999px 的正椭圆改成不对称比例。用百分比而不是固定值，
+ *      它按元素自身宽高计算，所以同一条规则在 64px 宽的底石和 20px 宽的
+ *      顶石上都能给出协调的弧度。四个角的水平/垂直半径两两不同，
+ *      才不会退化成一个椭圆。
+ *   ② 高度从 9px 加到 14px。9px 的时候曲线根本看不出来，视觉上就是一根根
+ *      细条 —— 用户在整个软件里都找不到"鹅卵石"，这是主要原因之一。
+ *
+ * 未放置的石头用卵石灰（--pebble），已放置的用苔绿。
+ */
+.cairn-stack { display: flex; flex-direction: column-reverse; align-items: center; gap: 4px; }
 .cairn-stone {
-  height: 9px;
+  height: 14px;
   border-radius: 52% 48% 50% 50% / 58% 62% 38% 42%;
-  background: var(--surface-3); border: 1px solid var(--line-2);
-  transition: background-color 260ms var(--ease), border-color 260ms var(--ease);
+  background: var(--pebble);
+  border: 1px solid var(--line-2);
+  opacity: .55;
+  transition: background-color 260ms var(--ease), border-color 260ms var(--ease),
+              opacity 260ms var(--ease);
 }
 /* 给不同位置的石头不同轮廓，避免整列长得一模一样 */
 .cairn-stone:nth-child(2n) { border-radius: 48% 52% 54% 46% / 62% 56% 44% 38%; }
 .cairn-stone:nth-child(3n) { border-radius: 51% 49% 46% 54% / 55% 60% 40% 45%; }
-.cairn-stone.is-placed { background: var(--accent); border-color: var(--accent); }
+.cairn-stone.is-placed {
+  background: var(--accent);
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+/* ---------------------------------------------------- 横向鹅卵石进度 ---
+ * v2.3b 新增：任务卡片里表示"这条任务有几块石头、放好了几块"。
+ * 形状语言与竖着的石堆一致（不对称圆角 + 轻微错位），只是排成一行。
+ */
+.pebble-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pebble-dot {
+  width: 16px; height: 13px;
+  border-radius: 52% 48% 50% 50% / 58% 62% 38% 42%;
+  background: var(--pebble);
+  opacity: .5;
+  border: 1px solid var(--line-2);
+  transition: background-color 240ms var(--ease), opacity 240ms var(--ease);
+}
+/* 每块石头的轮廓略有不同，避免排成一串完美的胶囊 */
+.pebble-dot:nth-child(2n) { border-radius: 46% 54% 55% 45% / 62% 56% 44% 38%; }
+.pebble-dot:nth-child(3n) { border-radius: 53% 47% 45% 55% / 55% 60% 40% 45%; }
+.pebble-dot.is-done {
+  background: var(--accent);
+  border-color: var(--accent);
+  opacity: 1;
+}
 
 /* 弹窗 */
 .modal-backdrop {
@@ -730,28 +771,47 @@ h2 { font-weight: 650; }
  * ==========================================================================*/
 
 /* ---------------------------------------------------------- 石堆可视化 --- */
+/* ============================================================================
+ * 石堆的第二套实现（进度页的"总石堆"用这套）
+ * ---------------------------------------------------------------------------
+ * ⚠️ 这里有一个必须记下来的教训：项目里其实有**两套**石堆组件
+ *      .cairn-stack / .cairn-stone   → 「当前」视图、专注视图
+ *      .pile / .pile-stone           → 「进度」视图的总石堆
+ * v2.3 初版只改了第一套，而用户最常看到的"总石堆"恰恰用的是第二套，
+ * 所以改完之后用户反馈"找不到不规则鹅卵石"。现在两套用同一套形状语言：
+ * 不对称圆角 + 更高的石头 + 未放置用卵石灰。
+ * -------------------------------------------------------------------------*/
 .pile {
   display: flex;
   flex-direction: column-reverse;   /* 从下往上堆 */
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
-.pile-sm { min-height: 34px; }
-.pile-md { min-height: 62px; }
-.pile-lg { min-height: 108px; }
+.pile-sm { min-height: 40px; }
+.pile-md { min-height: 78px; }
+.pile-lg { min-height: 132px; }
 .pile-empty { justify-content: center; }
 
 .pile-stone {
-  border-radius: 999px;
-  background: var(--surface-3);
+  /* 与 .cairn-stone 一致的不对称圆角 —— 这才是"鹅卵石"而不是"药丸" */
+  border-radius: 52% 48% 50% 50% / 58% 62% 38% 42%;
+  background: var(--pebble);
   border: 1px solid var(--line-2);
+  opacity: .55;
 }
-.pile-sm .pile-stone { height: 5px !important; }
-.pile-md .pile-stone { height: 8px !important; }
-.pile-lg .pile-stone { height: 11px !important; }
+/* 不同位置的石头给不同轮廓，避免整列长得一模一样 */
+.pile-stone:nth-child(2n) { border-radius: 48% 52% 54% 46% / 62% 56% 44% 38%; }
+.pile-stone:nth-child(3n) { border-radius: 51% 49% 46% 54% / 55% 60% 40% 45%; }
+
+/* 三档尺寸：比原来各加高 3~5px，否则曲线看不出来 */
+.pile-sm .pile-stone { height: 9px !important; }
+.pile-md .pile-stone { height: 13px !important; }
+.pile-lg .pile-stone { height: 17px !important; }
+
 .pile-stone.is-on {
   background: var(--accent);
   border-color: var(--accent);
+  opacity: 1;
 }
 
 /* ------------------------------------------------------------ 周配额条 --- */
@@ -4249,9 +4309,12 @@ function pileVisual(mode, value, opts) {
     filled = value || 0;
   } else if (mode === 'total') {
     /* 累计石堆：把数量压缩成可视的块数（对数式分档，保证"看得见增长"但不会画爆）。
-     * 1→1, 10→10, 50→14, 100→18, 300→22, 1000→26 */
+     * 1→5, 10→10, 50→14, 100→14, 300→14, 1000→14
+     *
+     * 上限从 26 降到 14：石头加高到 13~17px 之后，26 块会堆到 440px 高，
+     * 把整张卡片撑成长条，反而看不出"一摞石头"的轮廓。 */
     var v = Math.max(0, value || 0);
-    count = v === 0 ? 0 : Math.min(26, Math.round(4 + Math.log(v + 1) / Math.log(1.35)));
+    count = v === 0 ? 0 : Math.min(14, Math.round(4 + Math.log(v + 1) / Math.log(1.6)));
     filled = count;
   } else {
     count = Math.max(0, Math.min(value || 0, 14));
@@ -4266,8 +4329,9 @@ function pileVisual(mode, value, opts) {
   var html = '<div class="pile pile-' + size + '" role="img" aria-label="' +
              esc(mode === 'week' ? (filled + '/7') : String(value || 0)) + '">';
   for (var i = 0; i < count; i++) {
-    /* 越往上越窄，模拟真实石堆的收窄轮廓 */
-    var w = Math.round(maxW - (i / Math.max(count - 1, 1)) * (maxW * 0.45));
+    /* 越往上越窄，模拟真实石堆的收窄轮廓；
+     * 末尾的 (i % 3) 给宽度加一点确定性抖动，让边缘不齐得像被捡来的石头 */
+    var w = Math.round(maxW - (i / Math.max(count - 1, 1)) * (maxW * 0.45)) + (i % 3);
     var on = i < filled;
     html += '<span class="pile-stone' + (on ? ' is-on' : '') + '"' +
             ' style="width:' + w + 'px;height:' + stoneH + 'px"></span>';
@@ -4435,7 +4499,9 @@ function viewProgress() {
 }
 
 function statTile(value, label) {
-  return '<div class="p-3 rounded-sm text-center" style="background:var(--surface-2)">' +
+  /* v2.3b：底色从通用灰改成暖沙（--sand-soft）—— 让色板真的出现在界面上，
+   * 而不是只躺在 CSS 变量里。 */
+  return '<div class="p-3 rounded-sm text-center" style="background:var(--sand-soft)">' +
     '<div class="text-xl font-semibold tabular">' + value + '</div>' +
     '<div class="text-2xs text-ink-3 mt-1">' + esc(label) + '</div>' +
   '</div>';
@@ -4962,7 +5028,34 @@ function brandMark(size, opacity) {
          BRAND.markSVG(size, 'currentColor') + '</span>';
 }
 
-/* 今天堆了多少石头 —— 品牌隐喻变成真实的进度可视化 */
+/* 一排横向鹅卵石，用来表示"这条任务有几块石头、已经放好几块"
+ *
+ * 为什么是横向而不是竖着堆：任务卡片是横向布局（标题在上、进度在下），
+ * 竖着堆一列会把卡片拉得很高。横向排一行既保留了鹅卵石的形状语言，
+ * 又不破坏卡片比例。
+ *
+ * 每块石头的圆角比例略有不同（靠 nth-child），避免排成一排完美的胶囊。 */
+function pebbleRow(done, total) {
+  var n = Math.min(total || 0, 16);      /* 上限 16，超出用 +N 表示，避免挤成一条线 */
+  if (!n) return '';
+  var over = (total || 0) - n;
+  var html = '<div class="pebble-row" role="img" aria-label="' + done + '/' + (total || 0) + '">';
+  for (var i = 0; i < n; i++) {
+    html += '<span class="pebble-dot' + (i < done ? ' is-done' : '') + '"></span>';
+  }
+  html += '</div>';
+  if (over > 0) html += '<span class="text-2xs text-ink-4 ml-1">+' + over + '</span>';
+  return html;
+}
+
+/* 今天堆了多少石头 —— 品牌隐喻变成真实的进度可视化
+ *
+ * v2.3b：去掉了左边的进度条，只留石堆 + 一行文字。
+ * 理由有两条：
+ *   ① 文字已经写明"今天堆好了 3 / 12 块石头"，进度条是同一信息的第三种表达
+ *   ② 石堆才是这个产品独有的语言。留一个通用的进度条在旁边，
+ *      反而让"堆石头"这个隐喻被稀释了
+ */
 function cairnProgress() {
   var tasks = todayTasks();
   var total = 0, done = 0;
@@ -4973,12 +5066,13 @@ function cairnProgress() {
   });
   if (!total) return '';
   var placed = done;
-  return '<div class="flex items-center gap-3">' +
+  /* 上限 6 块：这里只是"今天一共堆了多少"的概览，竖着 10 块会比旁边
+   * 那一行文字高出三倍，视觉重心全跑到右下角去了。 */
+  return '<div class="flex items-center gap-4">' +
     '<div class="flex-1 min-w-0">' +
-      '<div class="text-xs text-ink-3 mb-1">' + esc(t('nowProgress', { done: done, total: total })) + '</div>' +
-      progressBar(Math.round(done / total * 100)) +
+      '<div class="text-xs text-ink-3">' + esc(t('nowProgress', { done: done, total: total })) + '</div>' +
     '</div>' +
-    '<div class="flex-none opacity-70">' + BRAND.stack(total, placed, 12) + '</div>' +
+    '<div class="flex-none">' + BRAND.stack(total, placed, 6) + '</div>' +
   '</div>';
 }
 
@@ -5242,9 +5336,14 @@ function viewNow() {
       '<div class="text-xs text-ink-3 uppercase tracking-wider mb-2">' + esc(t('nowTodoLabel')) + '</div>' +
       '<h1 class="text-2xl font-semibold leading-tight break-words">' + esc(task.title) + '</h1>' +
 
+      /* 步骤进度
+       * v2.3b：从通用进度条改成"一排鹅卵石"。
+       * 这是全软件出现频率最高的一处进度显示 —— 把它换成品牌自己的语言，
+       * 用户每天都会看到"堆石头"这件事，而不是一根随处可见的灰条。
+       * 已完成的是实心苔绿卵石，未完成的是卵石灰空心。 */
       (p.total ? '' +
         '<div class="flex items-center gap-3 mt-4">' +
-          '<div class="flex-1 min-w-0">' + progressBar(p.pct) + '</div>' +
+          '<div class="flex-1 min-w-0">' + pebbleRow(p.done, p.total) + '</div>' +
           '<span class="text-xs text-ink-3 mono">' + p.done + '/' + p.total + '</span>' +
         '</div>'
         : '') +
@@ -5761,16 +5860,16 @@ function viewSettings() {
        * 导入需确认后替换本机数据。」—— 四十多个字，讲的是备份的技术细节。
        * 用户打开设置是为了改设置，不是为了读文档。删掉。 */
       '<div class="grid gap-2" style="grid-template-columns:1fr 1fr">' +
-        '<div class="p-3 rounded-sm text-center" style="background:var(--surface-2)">' +
+        '<div class="p-3 rounded-sm text-center" style="background:var(--sand-soft)">' +
           '<div class="text-lg font-semibold mono">' + stats.tasks + '</div>' +
           '<div class="text-2xs text-ink-3">' + esc(t('statTasks')) + '</div></div>' +
-        '<div class="p-3 rounded-sm text-center" style="background:var(--surface-2)">' +
+        '<div class="p-3 rounded-sm text-center" style="background:var(--sand-soft)">' +
           '<div class="text-lg font-semibold mono">' + stats.blocks + '</div>' +
           '<div class="text-2xs text-ink-3">' + esc(t('statBlocks')) + '</div></div>' +
-        '<div class="p-3 rounded-sm text-center" style="background:var(--surface-2)">' +
+        '<div class="p-3 rounded-sm text-center" style="background:var(--sand-soft)">' +
           '<div class="text-lg font-semibold mono">' + stats.focus + '</div>' +
           '<div class="text-2xs text-ink-3">' + esc(t('statFocus')) + '</div></div>' +
-        '<div class="p-3 rounded-sm text-center" style="background:var(--surface-2)">' +
+        '<div class="p-3 rounded-sm text-center" style="background:var(--sand-soft)">' +
           '<div class="text-lg font-semibold mono">' + stats.ideas + '</div>' +
           '<div class="text-2xs text-ink-3">' + esc(t('statIdeas')) + '</div></div>' +
       '</div>' +
