@@ -2385,7 +2385,7 @@ function langTag() {
  * 云端、不做任何网络请求 —— 这样在机房断网的电脑上表现完全一致。
  * ==========================================================================*/
 
-var APP_VERSION = '2.3.0';
+var APP_VERSION = '2.3.1';
 var STORE_KEY = 'cairn.v1';      /* 存储键名保持不变，靠 data.v 字段做迁移 */
 var DATA_VERSION = 2;
 
@@ -5119,21 +5119,30 @@ function paintAppbar() {
 function viewBreakdown() {
   var d = State.draftSteps;
   var hasTasks = todayTasks().length > 0;
-  /* "空屏"= 没有拆解结果、也没有今天的任务。这种时候整屏只有两三个元素，
-   * 如果按自然流式排列就全挤在顶部、下面一大片空白（用户为此提过意见）。
-   * 所以空屏状态下把它垂直居中，视觉重心落在屏幕中央。 */
-  var isEmptyScreen = !d && !hasTasks;
 
-  return '' +
-  '<div class="max-w-lg mx-auto' + (isEmptyScreen ? ' hero-center' : '') + '">' +
+  /* v2.3.1：品牌区的显示条件改了。
+   *
+   * 原来它只在"今天没有任务"时出现 —— 也就是说用过几天之后，
+   * 石堆 + 手绘字标 + 口号就再也看不到了，主界面变成一个纯列表。
+   * 用户明确要求：主界面要永远像那张带品牌区的样子。
+   *
+   * 所以现在的规则是：
+   *   · 只要不是在展示拆解结果（d），品牌区一律显示
+   *   · 品牌区 + 输入框 + 示例 作为一整组垂直居中（这就是"图一"的构图）
+   *   · 今天的任务列表放到这一组**下方**，需要时往下滚就能看到
+   *
+   * 这样打开软件的第一屏永远是品牌区，功能一个都没少。
+   */
+  var showHero = !d;
+  var centerGroup = !d;
 
-    /* 品牌区：只在没有结果、也没有任务时出现，避免长期占据屏幕。
-     *
-     * v2.3 改版：原来这里是一行衬线 "Cairn" + 一句中文标语 + 一整段品牌故事。
-     * 用户的反馈是"字太多、无关紧要的话可以精简"。品牌故事确实属于
-     * "我们自我感动、用户并不想读"的那一类 —— 它已经被移进「关于」页。
-     * 现在这里是：石堆 + 手绘字标 + 一句口号，仅此而已。 */
-    (isEmptyScreen ? '' +
+  /* 拆解结果与任务列表不参与居中 —— 它们是内容，不是品牌亮相 */
+  var topGroup = '' +
+
+    /* 品牌区：石堆 + 手绘字标 + 一句口号，仅此而已。
+     * v2.3 精简介于一言：原来这里还有一整段品牌故事，属于"用户并不想读"
+     * 的那一类，已经移进「关于」页。 */
+    (showHero ? '' +
       '<div class="text-center pb-10">' +
         '<div class="flex justify-center mb-6 text-accent">' + brandMark(62, .95) + '</div>' +
         '<div class="flex justify-center">' + BRAND.wordmarkSVG(32, 'currentColor') + '</div>' +
@@ -5154,7 +5163,7 @@ function viewBreakdown() {
      * v2.3：原来空屏时这个标签也写着「把大任务，拆成下一小块」——
      * 和上面那句口号一模一样，一句话在一屏里出现两次。
      * 现在空屏时不显示标签（输入框里的占位文字已经说清楚了），
-     * 只有已有草稿时才显示「试试换个说法」这类有实际信息量的提示。 */
+     * 只有已有草稿时才显示「例：写论文、收拾房间」这类有信息量的提示。 */
     '<div class="card p-5">' +
       (d ? '<label class="block text-sm font-medium text-ink-2 mb-2" for="big-input">' +
             esc(t('inputHint')) + '</label>' : '') +
@@ -5170,9 +5179,8 @@ function viewBreakdown() {
             (State.settings.lastEngine === 'ai' ? 'true' : 'false') + '">' +
             BRAND.icon('spark', 13) + ' ' + esc(t('modeAI')) + '</button>' +
         '</div>' +
-        /* 这一行小字（"离线可用 · 数据不出本机"）在空屏时是有价值的信任信息，
-         * 但已经有任务之后就不必每次重复了。 */
-        (isEmptyScreen ? '<span class="text-xs text-ink-3">' +
+        /* 这一行小字是信任信息（离线可用），只在品牌区出现时展示 */
+        (showHero ? '<span class="text-xs text-ink-3">' +
           esc(State.settings.lastEngine === 'ai' ? t('aiNote') : t('offlineNote')) + '</span>' : '') +
         '<button class="btn btn-primary btn-lg ml-auto" data-act="decompose">' +
           BRAND.icon(State.settings.lastEngine === 'ai' ? 'spark' : 'breakdown', 17) +
@@ -5189,12 +5197,18 @@ function viewBreakdown() {
             esc(ex) + '</button>';
         }).join('') +
       '</div>'
-      : '') +
+      : '');
+
+  return '' +
+  '<div class="max-w-lg mx-auto">' +
+
+    /* 品牌亮相组：垂直居中，居中后第一屏的构图与"图一"一致 */
+    (centerGroup ? '<div class="hero-center">' + topGroup + '</div>' : topGroup) +
 
     /* 拆解结果 */
     (d ? renderDraft(d) : '') +
 
-    /* 今天已有的事情 */
+    /* 今天已有的事情 —— 放到品牌组下方，需要时往下滚 */
     (!d && hasTasks ? renderTodayList() : '') +
 
     /* 底部品牌落款
@@ -5202,10 +5216,9 @@ function viewBreakdown() {
      * 设计思路，未复制任何源码」—— 30 多字的声明挂在主界面最底部，每次都在。
      * 那句话本身没错（学术诚信要有），但它属于「关于」页，不属于主界面。
      * 现在主界面底部只剩版本号，完整声明在关于页里保留。 */
-    (isEmptyScreen ? '' :
-      '<div class="mt-10 pt-6 border-t flex items-center justify-end gap-2 text-xs text-ink-4">' +
-        brandMark(13, .5) + '<span>Cairn ' + APP_VERSION + '</span>' +
-      '</div>') +
+    '<div class="mt-10 pt-6 border-t flex items-center justify-end gap-2 text-xs text-ink-4">' +
+      brandMark(13, .5) + '<span>Cairn ' + APP_VERSION + '</span>' +
+    '</div>' +
   '</div>';
 }
 
